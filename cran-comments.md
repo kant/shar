@@ -1,3 +1,6 @@
+## shar 0.6
+Improvments of existing functions
+
 ## shar 0.5
 Improvments of existing functions
 

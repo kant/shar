@@ -3,21 +3,21 @@
 #' @description Fast estimation of the pair correlation function
 #'
 #' @param pattern Point pattern.
-#' @param ... Arguments passed down to `Kest` or `pcf.fv`.
+#' @param r A vector specifying the maximum radius of the sample circles and
+#' the interval length between successive sample circles radii.
+#' @param ... Arguments passed down to \code{kfun}.
 #'
 #' @details
-#' The functions estimates the pair correlation functions based on an estimation
-#' of Ripley's K-function. This makes it computationally faster than estimating the
-#' pair correlation function directly. It is a wrapper around `Kest` and `pcf.fv`.
+#' The functions estimates the pair correlation function using the \code{ads}
+#' package.
 #'
 #' @seealso
-#' \code{\link{Kest}} \cr
-#' \code{\link{pcf.fv}}
+#' \code{\link{kfun}}
 #'
 #' @return fv.object
 #'
 #' @examples
-#' pcf_species_b <- estimate_pcf_fast(species_a)
+#' pcf_species_a <- estimate_pcf_fast(species_a)
 #'
 #' @aliases estimate_pcf_fast
 #' @rdname estimate_pcf_fast
@@ -33,11 +33,66 @@
 #' methods of geometrical statistics. John Wiley and Sons.
 
 #' @export
-estimate_pcf_fast <- function(pattern, ...){
+estimate_pcf_fast <- function(pattern, r = NULL, ...){
 
-  k_fun <- suppressMessages(spatstat::Kest(X = pattern, ...)) # estimate K-fct
+  # unmark the pattern if marked
+  if (spatstat::is.marked(pattern)) {
 
-  result <- spatstat::pcf.fv(X = k_fun, ...) # estimate pcf from K-fct
+    pattern <- spatstat::unmark(pattern)
+  }
 
+  # calculat rmax if not provided
+  # can be problematic depending on window
+  if (is.null(r)) {
+
+    # get maximum distance r
+    upto <- spatstat::rmax.rule(W = pattern$window,
+                                lambda = spatstat::intensity(pattern))
+
+    # 25 steps to upto
+    by <- upto / 25
+
+    # combine into one vector
+    r <- c(upto, by)
+  }
+
+  # error if length r
+  else if (length(r) != 2 | !is.numeric(r)) {
+
+    stop("r must be a vector with length.", call. = FALSE)
+  }
+
+  # convert to spp object
+  pattern <- ads::ppp2spp(p = pattern)
+
+  # calculate summary functions
+  result <- ads::kfun(p = pattern,
+                      upto = r[[1]], by = r[[2]],
+                      nsim = 0)
+
+  # get pcf only
+  result <- cbind(r = result$r, result$g)
+
+  # order identical to spatstat package
+  result <- result[, c(1,3,2)]
+
+  # set names identical to spatstat package
+  names(result)[3] <- "iso"
+
+  # construct fv spatstat object.
+  result <- spatstat::fv(x = result,
+                         argu = "r",
+                         ylab = quote(g(r)),
+                         valu = "iso",
+                         fmla = . ~ r,
+                         labl = c("r",
+                                  "g[Pois](r)",
+                                  "hat(g)[Ripley](r)"),
+                         desc = c("distance argument r ",
+                                  "theoretical Poisson g(r)",
+                                  "isotropic-corrected estimate of g(r)"),
+                         fname = "pcf")
+
+  # return result
   return(result)
 }

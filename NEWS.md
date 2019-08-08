@@ -1,6 +1,7 @@
 # shar 0.6
 * Improvements
   * Printing methods for most objects
+  * speed improvment of `estimate_pcf_fast()` using the ads package
 * New functionality
   * `plot_energy()` to plot energy over iterations for reconstructed patterns
 

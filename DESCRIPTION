@@ -18,15 +18,16 @@ URL: https://r-spatialecology.github.io/shar
 BugReports: https://github.com/r-spatialecology/shar/issues
 Depends: R (>= 3.1)
 Imports:
+    ads,
     classInt,
     graphics,
     grDevices,
     methods,
     raster,
+    Rcpp,
     spatstat,
     stats,
-    utils,
-    Rcpp
+    utils
 RoxygenNote: 6.1.1
 Suggests:
     covr,
